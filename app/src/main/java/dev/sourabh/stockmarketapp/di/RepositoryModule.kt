@@ -8,6 +8,7 @@ import dev.sourabh.stockmarketapp.data.csv.CSVParser
 import dev.sourabh.stockmarketapp.data.csv.CompanyListingParser
 import dev.sourabh.stockmarketapp.data.repository.StockRepositoryImpl
 import dev.sourabh.stockmarketapp.domain.model.CompanyListing
+import dev.sourabh.stockmarketapp.domain.repository.StockRepository
 import javax.inject.Singleton
 
 @Module
@@ -24,5 +25,5 @@ abstract class RepositoryModule {
     @Singleton
     abstract fun bindStockRepository(
         stockRepositoryImpl: StockRepositoryImpl
-    ): StockRepositoryImpl
+    ): StockRepository
 }
