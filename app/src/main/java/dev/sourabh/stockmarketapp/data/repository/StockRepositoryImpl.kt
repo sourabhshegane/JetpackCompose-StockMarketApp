@@ -1,7 +1,9 @@
 package dev.sourabh.stockmarketapp.data.repository
 
+import dev.sourabh.stockmarketapp.data.csv.CSVParser
 import dev.sourabh.stockmarketapp.data.local.StockDatabase
 import dev.sourabh.stockmarketapp.data.mapper.toCompanyListing
+import dev.sourabh.stockmarketapp.data.mapper.toCompanyListingEntity
 import dev.sourabh.stockmarketapp.data.remote.StockAPI
 import dev.sourabh.stockmarketapp.domain.model.CompanyListing
 import dev.sourabh.stockmarketapp.domain.repository.StockRepository
@@ -16,7 +18,8 @@ import javax.inject.Singleton
 @Singleton
 class StockRepositoryImpl @Inject constructor(
     val api: StockAPI,
-    val db: StockDatabase
+    val db: StockDatabase,
+    val companyListingCSVParser: CSVParser<CompanyListing>
 ): StockRepository{
 
     private val dao = db.dao
@@ -43,12 +46,22 @@ class StockRepositoryImpl @Inject constructor(
             val remoteListings = try {
                 val responseFromAPI = api.getAllListings()
                 responseFromAPI.byteStream()
+                companyListingCSVParser.parse(responseFromAPI.byteStream())
             }catch (ioException: IOException){
                 ioException.printStackTrace()
                 emit(Resource.Error(message = "Could not load data. Please try again"))
+                null
             }catch (httpException: HttpException){
                 httpException.printStackTrace()
                 emit(Resource.Error(message = "Could not load data. Please try again"))
+                null
+            }
+
+            remoteListings?.let {listings ->
+                dao.clearCompanyListing()
+                dao.insertCompanyListings(listings.map { it.toCompanyListingEntity() })
+                emit(Resource.Success(listings))
+                emit(Resource.Loading(false))
             }
         }
     }
